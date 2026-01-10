@@ -24,6 +24,8 @@ Open your terminal (Command Prompt) and run the following command to install the
 
 pip install streamlit requests geopy pandas
 
+```
+## **Example**
 
-
+![App Screenshot](Chicago.png)
 
