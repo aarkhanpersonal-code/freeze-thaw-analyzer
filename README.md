@@ -10,8 +10,6 @@ This application is a **Streamlit** dashboard designed for Civil Engineering ana
 * **Algorithm:** Counts how many times the temperature crosses $0^\circ C$ (freezing point) within a selected date range.
 * **Statistics:** Improved Min/Max/Average temperature calculations.
 
----
-
 ## 2. Installation & Setup
 If you are setting this up on a new computer, follow these steps.
 
@@ -25,3 +23,4 @@ Open your terminal (Command Prompt) and run the following command to install the
 ```bash
 
 pip install streamlit requests geopy pandas
+
