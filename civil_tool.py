@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-from geopy.geocoders import Nominatim
 import pandas as pd
 
 # --- FUNCTION 1: THE LOGIC (Freeze/Thaw Calculation) ---
@@ -16,7 +15,7 @@ def count_crossings(temperatures):
             count += 1
     return count
 
-# --- FUNCTION 2: THE DATA FETCHING (With Debugging) ---
+# --- FUNCTION 2: THE DATA FETCHING (Using Open-Meteo Geocoder) ---
 def get_real_weather(city_name, start_date, end_date):
     # Convert dates to string format
     start_date_str = start_date.strftime("%Y-%m-%d")
@@ -28,32 +27,34 @@ def get_real_weather(city_name, start_date, end_date):
         return None
         
     try:
-        # 1. Get Coordinates (FIXED: Added timeout=10)
-        geolocator = Nominatim(user_agent="civil_eng_app_v2", timeout=10)
-        location = geolocator.geocode(city_name)
+        # 1. Get Coordinates using Open-Meteo's Geocoding API (Bypasses Nominatim limits)
+        geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city_name}&count=1&language=en&format=json"
         
-        if not location:
-            st.error("City not found. Please check spelling.")
+        geo_response = requests.get(geo_url, timeout=10)
+        geo_data = geo_response.json()
+        
+        # Check if the city was found
+        if "results" not in geo_data:
+            st.error(f"City '{city_name}' not found. Please check spelling.")
             return None
             
-        lat = location.latitude
-        lon = location.longitude
+        lat = geo_data["results"][0]["latitude"]
+        lon = geo_data["results"][0]["longitude"]
         
-        # 2. Get Data from Open-Meteo API (Archive)
-        url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date_str}&end_date={end_date_str}&hourly=temperature_2m"
+        # 2. Get Data from Open-Meteo Weather API (Archive)
+        weather_url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date_str}&end_date={end_date_str}&hourly=temperature_2m"
         
-        response = requests.get(url, timeout=10)
-        data = response.json()
+        weather_response = requests.get(weather_url, timeout=10)
+        weather_data = weather_response.json()
         
         # --- DEBUG CHECK ---
-        # If the API returns an error instead of data, print it so we can see why.
-        if 'hourly' not in data:
+        if 'hourly' not in weather_data:
             st.error("⚠️ The Weather API returned an error:")
-            st.json(data) # This prints the specific error reason to the screen
+            st.json(weather_data) 
             return None
             
         # 3. Return the list of temperatures
-        return data['hourly']['temperature_2m']
+        return weather_data['hourly']['temperature_2m']
         
     except Exception as e:
         st.error(f"System Error: {e}")
@@ -84,7 +85,7 @@ if st.button("Analyze Real Data", type="primary"):
             cycles = count_crossings(real_temps)
             
             # Display results
-            st.success(f"✅ Analysis Complete!")
+            st.success("✅ Analysis Complete!")
             st.metric("Freeze-Thaw Cycles Detected", cycles)
             st.info(f"Analyzed {len(real_temps)} hourly temperature readings")
             
