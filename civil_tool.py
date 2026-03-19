@@ -26,9 +26,10 @@ def get_real_weather(city_name, start_date, end_date):
     if start_date > end_date:
         st.error("⚠️ Error: Start Date cannot be after End Date.")
         return None
+        
     try:
-        # 1. Get Coordinates
-        geolocator = Nominatim(user_agent="civil_eng_app_v2")
+        # 1. Get Coordinates (FIXED: Added timeout=10)
+        geolocator = Nominatim(user_agent="civil_eng_app_v2", timeout=10)
         location = geolocator.geocode(city_name)
         
         if not location:
@@ -41,7 +42,7 @@ def get_real_weather(city_name, start_date, end_date):
         # 2. Get Data from Open-Meteo API (Archive)
         url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date={start_date_str}&end_date={end_date_str}&hourly=temperature_2m"
         
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         data = response.json()
         
         # --- DEBUG CHECK ---
@@ -50,6 +51,7 @@ def get_real_weather(city_name, start_date, end_date):
             st.error("⚠️ The Weather API returned an error:")
             st.json(data) # This prints the specific error reason to the screen
             return None
+            
         # 3. Return the list of temperatures
         return data['hourly']['temperature_2m']
         
